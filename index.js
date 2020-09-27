@@ -8,38 +8,35 @@ const fetch = require('node-fetch');
 const decompress = require('decompress');
 const util = require('util');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const streamPipeline = util.promisify(require('stream').pipeline);
 
 program.version(version).name(name);
 
 program.description('cli-study脚手架工具下载');
-program.command('create <tpl> <project>')
-  .action(function(tpl, project){
-    log.info('目前支持以下模版：')
+program.command('create <project>')
+  .action(function(project){
     log.info('使用例子：node index.js create myproject')
-    if (tpl && project) {
-      
-    } else {
-      log.error('正确命令例子：x-cli x-express myproject')
-    }
-    
     fetch('https://github.com/chenhx2015/skeleton/archive/master.zip')
-      .then(response => {
-      // console.log('response', response);
+      .then(function(response) {
       if(response.status == 302) {
         log.info('redirect to ', response.Location)
         return fetch(response.Location);
       } else {
         return response;
       }
-    }).then(res =>{
+    }).then(function(res) {
       if (res.ok) {
         return streamPipeline(res.body, fs.createWriteStream('./master.zip'));
-      }else{
+      } else {
         return Promise.reject(res.status);
       }
-    }).then( (pipe)=>{
-      return decompress('./master.zip', project);
+    }).then(function(pipe) {
+      return decompress('./master.zip', './');
+    }).then(function() {
+      return fsPromises.rename('skeleton-master', project);
+    }).then(function() {
+      return fsPromises.unlink('./master.zip');
     })
   });
 

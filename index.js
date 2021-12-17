@@ -68,11 +68,9 @@ program
     console.log(`\r\nRun ${chalk.cyan(`skeleton-cli <command> --help`)} for detailed usage of given command\r\n`)
   })
 
-
 // program.parse()
 // 4.2 解析用户执行命令传入参数
 program.parse(process.argv)
-
 
 // 3.询问 命令行交互工具
 // 8.询问用户问题 并 获取创建所需要的信息

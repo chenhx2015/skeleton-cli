@@ -1,5 +1,7 @@
 const path = require('path')
 const fs = require('fs-extra')
+const inquirer = require('inquirer')
+const Generator = require('./generator'); 
 
 // 询问之后，创建目录
 // 需要思考：是否已经存在？是否需要强制覆盖？
@@ -26,7 +28,37 @@ module.exports = async function (name, options) {
     if (options.force) {
       await fs.remove(targetAir)
     } else {
-      // TODO：询问用户是否确定要覆盖
+      // 询问用户是否确定要覆盖
+
+      let { action } = await inquirer.prompt([
+        {
+          name: 'action',
+          type: 'list',
+          message: 'Target directory already exists, do you want to overwrite it ?',
+          choices: [
+            {
+              name: 'Overwrite',
+              value: 'overwrite'
+            },{
+              name: 'Cancel',
+              value: false
+            }
+          ]
+        }
+      ])
+
+      if (!action) {
+        return;
+      } else if (action === 'overwrite') {
+        // 移除已存在的目录
+        console.log(`\r\nRemoving...`)
+        await fs.remove(targetAir)
+      }
     }
   }
+
+  // 创建项目
+  const generator = new Generator(name, targetAir);
+  // 开始创建项目
+  generator.create()
 }

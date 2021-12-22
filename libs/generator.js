@@ -17,6 +17,10 @@
 const { getRepoList, getTagList } = require('./http')
 const ora = require('ora')
 const inquirer = require('inquirer')
+const util = require('util')
+const path = require('path')
+const chalk = require('chalk')
+const downloadGitRepo = require('download-git-repo') // 下载远程模版使用的工具包，但是注意这个 不支持 Promise
 
 // 添加加载动画
 async function wrapLoading(fn, message, ...args) {
@@ -43,6 +47,8 @@ class Generator {
     this.name = name;
     // 创建位置
     this.targetDir = targetDir;
+    // 对 download-git-repo 进行 promise 化改造
+    this.downloadGitRepo = util.promisify(downloadGitRepo);
   }
 
   // 获取用户选择的模板
@@ -95,6 +101,23 @@ class Generator {
     return tag
   }
 
+  // 下载远程模板
+  // 1）拼接下载地址
+  // 2）调用下载方法
+  async download(repo, tag){
+
+    // 1）拼接下载地址
+    const requestUrl = `zhurong-cli/${repo}${tag?'#'+tag:''}`;
+
+    // 2）调用下载方法
+    // 加载动画 有
+    // wrapLoading(fn, message, ...args)
+    await wrapLoading(
+      this.downloadGitRepo, // 远程下载方法（传入第三，四个参数）
+      'waiting download template', // 加载提示信息
+      requestUrl, // 参数1: 下载地址
+      path.resolve(process.cwd(), this.targetDir)) // 参数2: 创建位置
+  }
 
   // 核心创建逻辑
   // 1）获取模板名称
@@ -107,8 +130,15 @@ class Generator {
     
     // 2) 获取 tag 名称
     const tag = await this.getTag(repo)
+
+    // 3）下载模板到模板目录
+    await this.download(repo, tag)
      
-    console.log('用户选择了，repo=' + repo + '，tag='+ tag)
+    // console.log('用户选择了，repo=' + repo + '，tag='+ tag)
+    // 4）模板使用提示
+    console.log(`\r\nSuccessfully created project ${chalk.cyan(this.name)}`)
+    console.log(`\r\n  cd ${chalk.cyan(this.name)}`)
+    console.log('  npm run dev\r\n')
   }
 }
 
